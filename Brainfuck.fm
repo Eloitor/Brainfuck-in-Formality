@@ -1,0 +1,163 @@
+import List#HQNc
+import Number#Uwaf
+import String#iLh_
+import IO#EniU
+
+T Tape
+| tape(left: List(Number), current: Number, right: List(Number))
+
+newTape: Tape
+  tape(nil(_), 0, nil(_))
+
+T Instruction
+| right
+| left
+| inc
+| dec
+| write
+| read
+| loop(code: List(Instruction))
+
+ Program: Type
+  List(Instruction)
+
+// >  Move to the right, extend the tape if necessary
+Right(t: Tape): Tape
+  case t
+  | tape =>
+    case t.right as r
+    | nil  => tape(cons(_ t.current, t.left), 0 , nil(_))
+    | cons => tape(cons(_ t.current, t.left), r.head, r.tail)
+
+// < Move to the left, extend the tape if necessary
+Left(t: Tape): Tape
+case t
+| tape =>
+  case t.left as l
+  | nil  => tape(nil(_), 0, cons(_ t.current, t.right))
+  | cons => tape(l.tail, l.head, cons(_ t.current, t.right))
+
+// .  Write to screen
+Write(t: Tape): IO(Unit)
+  case t
+  | tape => print(cons(_ t.current, nil(_)))
+        //print(number_to_string(10,t.current) )
+        //UNCOMMENT TO PRINT NUMBERS
+
+// ,  Read from user
+Read(t: Tape): IO(Tape)
+  do {
+    var num = question("Enter character:")
+    case t
+    | tape =>  return(_ tape(t.left, head(_ 0, num) , t.right))
+  }
+
+Inc(t: Tape): Tape
+case t
+| tape => tape(t.left, t.current .+. 1, t.right)
+
+Dec(t: Tape): Tape
+case t
+| tape => tape(t.left, t.current .-. 1, t.right)
+
+// ignore everithing before the matching ']'
+ignoreLoop(s: String): String
+  case s
+  | nil => nil(Char;)
+  | cons =>
+    if s.head .==. '[' then
+      case ignoreLoop(s.tail) as code
+      | nil => nil(_)
+      | cons => ignoreLoop(code.tail)
+      : String
+    else if s.head .==. ']' then
+      s.tail
+    else
+      ignoreLoop(s.tail)
+    : String
+
+compile(s: String): Program
+  case s
+  | nil => nil(_)
+  | cons =>
+// Right/Left
+    if s.head .==. '<' then
+      cons(_ left , compile(s.tail))
+    else if s.head .==. '>' then
+      cons(_ right , compile(s.tail))
+// Inc/Dec
+    else if s.head .==. '+' then
+      cons(_ inc , compile(s.tail))
+    else if s.head .==. '-' then
+      cons(_ dec , compile(s.tail))
+// Write/Read
+    else if s.head .==. '.' then
+      cons(_ write , compile(s.tail))
+    else if s.head .==. ',' then
+      cons(_ read , compile(s.tail))
+// Loops (possibly nested)
+    else if s.head .==. '[' then
+      cons(_ loop(compile(s.tail)), compile(ignoreLoop(s.tail)))
+    else if s.head .==. ']' then
+      nil(_)
+//ignores char
+    else
+      compile(s.tail)
+    : Program
+
+// For testing purposes
+toBrainFuck(p : List(Instruction)) : String
+  case p
+  | nil => nil(_)
+  | cons =>
+  case p.head as ins
+  + toBrainFuck : List(Instruction) -> String
+    | right => cons(_ '>', toBrainFuck(p.tail))
+    | left  => cons(_ '<', toBrainFuck(p.tail))
+    | inc   => cons(_ '+', toBrainFuck(p.tail))
+    | dec   => cons(_ '-', toBrainFuck(p.tail))
+    | write => cons(_ '.', toBrainFuck(p.tail))
+    | read  => cons(_ ',', toBrainFuck(p.tail))
+    | loop  =>
+        concat(_ concat(_ cons(_ '[' , toBrainFuck(ins.code)), "]"), toBrainFuck(p.tail))
+
+// Helper for run,
+Loop(p: Program, t: Tape): IO(Tape)
+    case t
+    | tape =>
+      if t.current .==. 0 then
+        return(_ t)               // skips the loop
+      else
+        do{
+          var newtape = run(p, t) // runs the loop
+          Loop(p, newtape)        // repeat
+        }
+
+
+run(p: Program, t: Tape): IO(Tape)
+  do{
+  case p
+  | nil => return(_ t)
+  | cons => case p.head as ins
+  + run : Program -> Tape -> IO(Tape)
+    | right => run(p.tail, Right(t))
+    | left  => run(p.tail, Left(t))
+    | inc   => run(p.tail, Inc(t))
+    | dec   => run(p.tail, Dec(t))
+    | write =>
+      do{
+      Write(t)
+      run(p.tail, t)
+      }
+    | read  =>
+      do{
+        var tape = Read(t)
+        run(p.tail, tape)
+
+      }
+    | loop =>
+      do{
+        var tape = Loop(ins.code, t)
+        run(p.tail, tape)
+      }
+  }
