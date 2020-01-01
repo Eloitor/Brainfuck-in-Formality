@@ -24,3 +24,7 @@ fm -l PBF_HelloWorldOptimal#J4Mv
 fm -o PBF_HelloWorld#rMeV
 ```
 (This one gives `Maximum call stack size exceeded` when running under `fm -d` option.)
+
+### TO DO:
+1. Store the input if it contains more than one character.
+2. Optimize?
