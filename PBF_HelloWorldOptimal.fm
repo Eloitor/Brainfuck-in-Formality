@@ -1,0 +1,10 @@
+import Base#
+import PureBrainfuck#DuOd
+
+main : String
+  let helloWorld = "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++."
+  let p = compile(helloWorld)
+  //print(toBrainFuck(p)) // prints the original code
+    case run(p, newTape("")) as t
+      | tape => t.output
+  
