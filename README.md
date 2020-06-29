@@ -1,4 +1,4 @@
-# Brainfuck in Formality
+# Brainfuck in Formality - Outdated
 A simple [Brainfuck](https://esolangs.org/wiki/Brainfuck) interpreter written in [Formality](https://github.com/moonad/Formality).
 
 Install Formality and run `fm -r BF_HelloWorld` or `fm -r PBF_HelloWorld`
